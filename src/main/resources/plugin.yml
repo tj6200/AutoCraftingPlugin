@@ -1,0 +1,5 @@
+main: com.tj6200.autocraft.AutoCraft
+name: AutoCraftingPlugin
+version: 1.0
+api-version: 1.17
+author: tj6200
