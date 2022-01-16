@@ -21,10 +21,8 @@ package com.tj6200.autocraft.listeners;
 
 import com.tj6200.autocraft.AutoCraft;
 import com.tj6200.autocraft.api.AutoCrafter;
-import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -32,7 +30,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDispenseEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
@@ -40,8 +37,6 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -52,18 +47,6 @@ public class EventListener implements Listener {
 
     public EventListener(Plugin plugin) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onChunkUnload(ChunkUnloadEvent e) {
-        Chunk chunk = e.getChunk();
-        AutoCraft.unload(chunk);
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onChunkLoad(ChunkLoadEvent e){
-        Chunk chunk = e.getChunk();
-        AutoCraft.load(chunk);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -79,7 +62,6 @@ public class EventListener implements Listener {
         if (autoCrafter == null) {
             return;
         }
-        autoCrafter.run();
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -94,21 +76,6 @@ public class EventListener implements Listener {
         AutoCrafter autoCrafter = AutoCraft.getAutoCrafter(block);
         if (autoCrafter == null) {
             return;
-        }
-        autoCrafter.stop();
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onInventoryPlace(BlockPlaceEvent e) {
-        Block block = e.getBlock();
-        BlockState state = block.getState();
-        if (!(state instanceof InventoryHolder)) {
-            return;
-        }
-        InventoryHolder inventoryHolder = (InventoryHolder) state;
-        AutoCrafter autoCrafter = AutoCraft.fromInventorySpot(block);
-        if (autoCrafter != null) {
-            autoCrafter.run();
         }
     }
 
@@ -158,37 +125,18 @@ public class EventListener implements Listener {
     //This method specifically is needed because when droppers put the item directly into the neighbouring container the BlockDispenseEvent is not fired.
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onItemMove(final InventoryMoveItemEvent e) {
-        InventoryHolder source = e.getSource().getHolder();
-        InventoryHolder destination = e.getDestination().getHolder();
+        InventoryHolder initiator = e.getInitiator().getHolder();
         //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
-        if (!(source instanceof Container)) {
+        if (!(initiator instanceof Container)) {
             return;
         }
-        Container container = (Container) source;
+        Container container = (Container) initiator;
         Block block = container.getBlock();
-        AutoCrafter sourceAutoCrafter = AutoCraft.getAutoCrafter(block);
 
-        if(!(destination instanceof Container)){
-            return;
-        }
-        container = (Container) destination;
-        block = container.getBlock();
-        AutoCrafter destAutoCrafter = AutoCraft.getAutoCrafter(block);
-
-        if (sourceAutoCrafter == null && destAutoCrafter == null) {
-            return;
-        }
-        // now we know one of the inventories is an autocrafter
-
-        // if the source is the autocrafter
-        if (destAutoCrafter == null) {
-            InventoryHolder initiator = e.getInitiator().getHolder();
-            if (initiator == source) {
-                e.setCancelled(true);
-            }
-        // this means that the destination inventory will be updated. So we should run the autocrafter
-        }else {
-            destAutoCrafter.run();
+        // if the source is the inventory
+        AutoCrafter autoCrafter = AutoCraft.getAutoCrafter(block);
+        if (autoCrafter != null) {
+            e.setCancelled(true);
         }
     }
 

@@ -24,6 +24,9 @@ import com.tj6200.autocraft.listeners.EntitiesLoaderListener;
 import com.tj6200.autocraft.listeners.EventListener;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Container;
+import org.bukkit.block.DoubleChest;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
@@ -36,6 +39,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import com.tj6200.autocraft.api.*;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitScheduler;
 
 
 public class AutoCraft extends JavaPlugin {
@@ -43,6 +48,9 @@ public class AutoCraft extends JavaPlugin {
     public static boolean particles;
     public static String redstoneMode;
     public static long craftCooldown;
+    public static long minutesPerSave;
+
+    private static long saveCoolDown;
 
     public static ArrayList<AutoCrafter> autoCrafters = new ArrayList<>();
 
@@ -64,6 +72,13 @@ public class AutoCraft extends JavaPlugin {
             RecipeHandler.collectRecipes(this);
             getAutoCrafters();
         });
+
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(this, (Runnable) new BukkitRunnable() {
+            @Override
+            public void run() {
+                saveAutoCrafters();
+            }
+        }, saveCoolDown, saveCoolDown);
 
         new EventListener(this);
         new EntitiesLoaderListener(this);
@@ -89,7 +104,7 @@ public class AutoCraft extends JavaPlugin {
             String json = Files.readString(Path.of(file.getPath()));
             JsonObject jsonObject = (JsonObject) JsonParser.parseString(json);
             getAutoCraftersFromJSON(jsonObject);
-            LOGGER.log(autoCrafters.size() + " autocrafters loaded");
+            LOGGER.log(autoCrafters.size() + " autocrafters initialized");
         }catch(Exception e) {
             LOGGER.log(e.getLocalizedMessage());
             LOGGER.log("Could not load json file");
@@ -108,9 +123,7 @@ public class AutoCraft extends JavaPlugin {
         return object;
     }
 
-    @Override
-    public void onDisable() {
-        super.onDisable();
+    private void saveAutoCrafters() {
         Gson gson = new GsonBuilder()
                 .setPrettyPrinting()
                 .create();
@@ -121,10 +134,17 @@ public class AutoCraft extends JavaPlugin {
             fw.flush();
             gson.toJson(object, fw);
             fw.close();
+            LOGGER.log("Saved AutoCrafters");
         } catch (IOException e) {
             LOGGER.log("Could not save autocrafters");
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void onDisable() {
+        super.onDisable();
+        saveAutoCrafters();
         LOGGER.log("AutoCraft plugin stopped");
     }
 
@@ -144,15 +164,6 @@ public class AutoCraft extends JavaPlugin {
             }
         }
         return false;
-    }
-
-    public static AutoCrafter fromInventorySpot(Block block) {
-        for(AutoCrafter autoCrafter: autoCrafters) {
-            if (autoCrafter.destinationBlock.equals(block)){
-                return autoCrafter;
-            }
-        }
-        return null;
     }
 
     public static void updateAutoCrafter(Block block, ItemFrame itemFrame, Player player) {
@@ -213,22 +224,6 @@ public class AutoCraft extends JavaPlugin {
         for(AutoCrafter autoCrafter: autoCrafters) {
             if (chunk.getChunkKey() == autoCrafter.itemFrameChunk.getChunkKey()) {
                 autoCrafter.load(entities);
-            }
-        }
-    }
-
-    public static void load(Chunk chunk) {
-        for(AutoCrafter autoCrafter: autoCrafters) {
-            if (chunk.getChunkKey() == autoCrafter.dispenserChunk.getChunkKey()) {
-                autoCrafter.run();
-            }
-        }
-    }
-
-    public static void unload(Chunk chunk) {
-        for(AutoCrafter autoCrafter: autoCrafters) {
-            if (chunk.getChunkKey() == autoCrafter.dispenserChunk.getChunkKey()) {
-                autoCrafter.stop();
             }
         }
     }
@@ -300,10 +295,16 @@ public class AutoCraft extends JavaPlugin {
      * This method reloads values from config file
      */
 
+    private void setMinutesPerSave(long minutes) {
+        minutesPerSave = minutes;
+        saveCoolDown = 20 * 60 * minutes;
+    }
+
     private void updateConfig(){
         craftCooldown = getConfig().getLong("craftCooldown");
         particles = getConfig().getBoolean("particles");
         redstoneMode = getConfig().getString("redstoneMode");
+        setMinutesPerSave(getConfig().getLong("saveCooldown"));
     }
 
 

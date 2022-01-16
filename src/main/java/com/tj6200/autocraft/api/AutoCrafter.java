@@ -32,13 +32,13 @@ public class AutoCrafter {
     private boolean isBroken = false;
     private Dispenser dispenser;
     public Block destinationBlock;
-    private BlockState destination;
+    public Block secondDestinationBlock;
+    public BlockState destination;
     public CraftingTask task;
 
     private void init(Block block, Block itemFrame, ItemStack item) {
         setBlock(block);
         setItemFrameBlock(itemFrame);
-        this.task = new CraftingTask(this);
         isBroken = false;
         isLoaded = true;
         updateStates();
@@ -86,6 +86,10 @@ public class AutoCrafter {
                 block.getX() + targetFace.getModX(),
                 block.getY() + targetFace.getModY(),
                 block.getZ() + targetFace.getModZ()).getBlock();
+        this.secondDestinationBlock = new Location(block.getWorld(),
+                block.getX() + targetFace.getModX() * 2,
+                block.getY() + targetFace.getModY() * 2,
+                block.getZ() + targetFace.getModZ() * 2).getBlock();
         this.dispenserChunk = block.getChunk();
     }
 
@@ -100,12 +104,13 @@ public class AutoCrafter {
 
     public boolean setItem(ItemStack item) {
         isBroken = false;
+        isLoaded = true;
         BlockState state = block.getState();
         ((Nameable) state).setCustomName("Autocrafter");
         state.update();
         getRecipesFor(item);
         if (recipes.size() == 0) {
-            item = null;
+            this.item = null;
             this.breakCrafter();
             return false;
         }
@@ -116,6 +121,7 @@ public class AutoCrafter {
     public void breakCrafter() {
         isBroken = true;
         item = null;
+        this.stop();
         BlockState state = block.getState();
         ((Nameable) state).setCustomName(null);
         state.update();
@@ -145,10 +151,9 @@ public class AutoCrafter {
             if (item.getType().equals(Material.AIR) || item == null) {
                 continue;
             }
-            this.setItem(item);
+            AutoCraft.LOGGER.log(this + " was loaded");
             this.isLoaded = true;
-            AutoCraft.LOGGER.log("AutoCrafter was loaded");
-
+            this.setItem(item);
             return;
         }
 
@@ -201,9 +206,7 @@ public class AutoCrafter {
         if (!dispenserChunk.isLoaded()) {
             return false;
         }
-
         updateStates();
-
         if (destination instanceof InventoryHolder) {
             return bukkitCraftItem();
         }
@@ -211,14 +214,14 @@ public class AutoCrafter {
         return false;
     }
 
-    public void run() {
+    private void run() {
         if (task != null) {
             return;
         }
         task = new CraftingTask(this);
     }
 
-    public void stop() {
+    private void stop() {
         if (task != null) {
             task.cancel();
         }
@@ -244,5 +247,20 @@ public class AutoCrafter {
         json.add(itemFramePosJsonPropStr, position);
 
         return json;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("AutoCrafter[");
+        builder.append(block.getWorld().getName());
+        builder.append(":");
+        builder.append(block.getX());
+        builder.append(", ");
+        builder.append(block.getY());
+        builder.append(", ");
+        builder.append(block.getZ());
+        builder.append("]");
+        return builder.toString();
     }
 }

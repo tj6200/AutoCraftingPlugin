@@ -8,6 +8,7 @@ public class CraftingTask extends BukkitRunnable {
 
     public CraftingTask(AutoCrafter autoCrafter) {
         this.autoCrafter = autoCrafter;
+        AutoCraft.LOGGER.log(autoCrafter + " started running.");
         runTaskTimer(AutoCraft.INSTANCE, 2L, AutoCraft.craftCooldown);
     }
 
@@ -16,6 +17,7 @@ public class CraftingTask extends BukkitRunnable {
         try {
             super.cancel();
             autoCrafter.task = null;
+            AutoCraft.LOGGER.log(autoCrafter + " stopped.");
         }catch (Exception e) {
             AutoCraft.LOGGER.log("Task cancellation unsuccessful.");
         }
@@ -23,15 +25,12 @@ public class CraftingTask extends BukkitRunnable {
 
     @Override
     public void run() {
-        if (AutoCraft.redstoneMode.equalsIgnoreCase("disabled")) { // redstone powering type check
-            return;
+        if (!AutoCraft.redstoneMode.equalsIgnoreCase("disabled")) { // redstone powering type check
+            if ((AutoCraft.redstoneMode.equalsIgnoreCase("indirect")
+                    && this.autoCrafter.block.isBlockIndirectlyPowered()) || autoCrafter.block.isBlockPowered()) {
+                return;
+            }
         }
-        if ((AutoCraft.redstoneMode.equalsIgnoreCase("indirect")
-                && this.autoCrafter.block.isBlockIndirectlyPowered()) || autoCrafter.block.isBlockPowered()) {
-            return;
-        }
-        if (!autoCrafter.handle()) {
-            this.cancel();
-        }
+        autoCrafter.handle();
     }
 }
