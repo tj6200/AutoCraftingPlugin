@@ -1,6 +1,7 @@
 package com.tj6200.autocraft.api;
 
 import com.google.gson.JsonObject;
+import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -106,7 +107,7 @@ public class AutoCrafter {
         isBroken = false;
         isLoaded = true;
         BlockState state = block.getState();
-        ((Nameable) state).setCustomName("Autocrafter");
+        ((Nameable) state).customName(Component.text("Autocrafter"));
         state.update();
         getRecipesFor(item);
         if (recipes.size() == 0) {
@@ -123,7 +124,7 @@ public class AutoCrafter {
         item = null;
         this.stop();
         BlockState state = block.getState();
-        ((Nameable) state).setCustomName(null);
+        ((Nameable) state).customName(null);
         state.update();
     }
 
@@ -161,6 +162,10 @@ public class AutoCrafter {
     }
 
     private void updateStates() {
+        if (!block.getType().equals(Material.DISPENSER)) {
+            this.breakCrafter();
+            return;
+        }
         dispenser = (Dispenser) this.block.getState();
         destination = destinationBlock.getState();
     }

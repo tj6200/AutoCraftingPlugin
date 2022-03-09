@@ -27,6 +27,8 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
 import org.bukkit.block.DoubleChest;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
@@ -41,6 +43,7 @@ import java.util.*;
 import com.tj6200.autocraft.api.*;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitScheduler;
+import org.jetbrains.annotations.NotNull;
 
 
 public class AutoCraft extends JavaPlugin {
@@ -69,7 +72,7 @@ public class AutoCraft extends JavaPlugin {
         updateConfig();
 
         Bukkit.getScheduler().runTask(this, ()-> {
-            RecipeHandler.collectRecipes(this);
+            RecipeHandler.collectRecipes();
             getAutoCrafters();
         });
 
@@ -82,6 +85,19 @@ public class AutoCraft extends JavaPlugin {
 
         new EventListener(this);
         new EntitiesLoaderListener(this);
+    }
+
+    @Override
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        if (command.getName().equalsIgnoreCase("reloadrecipes")) {
+            RecipeHandler.collectRecipes();
+            if (sender instanceof Player) {
+                Player player = (Player) sender;
+                Utils.sendActionBarMessageToPlayer(player, "Reloaded Recipes");
+            }
+            return true;
+        }
+        return false;
     }
 
     private static void getAutoCraftersFromJSON(JsonObject json) {

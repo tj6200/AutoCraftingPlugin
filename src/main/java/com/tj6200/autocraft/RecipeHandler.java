@@ -63,7 +63,9 @@ public class RecipeHandler {
      *
      **/
 
-    public static void collectRecipes(JavaPlugin plugin) {
+    public static void collectRecipes() {
+
+        recipes.clear();
 
         Iterator<Recipe> it = Bukkit.recipeIterator();
         while (it.hasNext()) {
