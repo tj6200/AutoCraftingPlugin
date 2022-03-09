@@ -203,6 +203,9 @@ public class AutoCraft extends JavaPlugin {
     public static void breakAutoCrafter(Block block, Player player) {
         for(AutoCrafter autoCrafter: autoCrafters) {
             if (autoCrafter.block.equals(block)) {
+                if (autoCrafter.isBroken()) {
+                    return;
+                }
                 if (player != null) {
                     Utils.sendActionBarMessageToPlayer(player, "AutoCrafter Broken");
                 }
