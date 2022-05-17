@@ -21,32 +21,67 @@ package com.tj6200.autocraft.listeners;
 
 import com.tj6200.autocraft.AutoCraft;
 import com.tj6200.autocraft.api.AutoCrafter;
+import org.bukkit.Chunk;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.Container;
+import org.bukkit.block.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDispenseEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.inventory.InventoryMoveItemEvent;
-import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.ArrayList;
+
 public class EventListener implements Listener {
 
     public EventListener(Plugin plugin) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onChunkLoad(ChunkLoadEvent e) {
+        Chunk chunk = e.getChunk();
+        ArrayList<AutoCrafter> autoCrafters = AutoCraft.getAutoCraftersInChunk(chunk);
+        for (AutoCrafter autoCrafter: autoCrafters) {
+            autoCrafter.run();
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onChunkUnload(ChunkUnloadEvent e) {
+        Chunk chunk = e.getChunk();
+        ArrayList<AutoCrafter> autoCrafters = AutoCraft.getAutoCraftersInChunk(chunk);
+        for (AutoCrafter autoCrafter: autoCrafters) {
+            autoCrafter.stop();
+        }
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    public void onPlaceBlock(BlockPlaceEvent e){
+        Block block = e.getBlockPlaced();
+        BlockState state = block.getState();
+        if (!(state instanceof Container)) {
+            return;
+        }
+
+        AutoCrafter autoCrafter = AutoCraft.getAutoCrafterFromInventory(block);
+        if (autoCrafter != null) {
+            autoCrafter.run();
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -62,6 +97,7 @@ public class EventListener implements Listener {
         if (autoCrafter == null) {
             return;
         }
+        autoCrafter.run();
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -77,6 +113,7 @@ public class EventListener implements Listener {
         if (autoCrafter == null) {
             return;
         }
+        autoCrafter.stop();
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -122,9 +159,10 @@ public class EventListener implements Listener {
         }
     }
 
-    //This method specifically is needed because when droppers put the item directly into the neighbouring container the BlockDispenseEvent is not fired.
+    //This method specifically is needed because when droppers put the item directly into the neighbouring container,
+    // the BlockDispenseEvent is not fired when the dispenser moves an item.
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onItemMove(final InventoryMoveItemEvent e) {
+    public void onItemMoveOutOfAutoCrafter(final InventoryMoveItemEvent e) {
         InventoryHolder initiator = e.getInitiator().getHolder();
         //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
         if (!(initiator instanceof Container)) {
@@ -137,6 +175,109 @@ public class EventListener implements Listener {
         AutoCrafter autoCrafter = AutoCraft.getAutoCrafter(block);
         if (autoCrafter != null) {
             e.setCancelled(true);
+            return;
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onItemMoveIntoAutoCrafter(final InventoryMoveItemEvent e) {
+        InventoryHolder destination = e.getDestination().getHolder();
+        if (!(destination instanceof Dispenser)) {
+            return;
+        }
+        Dispenser dispenser = (Dispenser) destination;
+        Block block = dispenser.getBlock();
+
+        AutoCrafter autoCrafter = AutoCraft.getAutoCrafter(block);
+        if (autoCrafter != null) {
+            autoCrafter.run();
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onItemMoveFromContainer(final InventoryMoveItemEvent e){
+        InventoryHolder source = e.getSource().getHolder();
+        if (!(source instanceof Container)) {
+            return;
+        }
+        Container container = (Container) source;
+        Block block = container.getBlock();
+
+        AutoCrafter autoCrafter = AutoCraft.getAutoCrafterFromInventory(block);
+        if (autoCrafter != null) {
+            autoCrafter.run();
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onItemMoveFromDoubleChest(final InventoryMoveItemEvent e){
+        InventoryHolder source = e.getSource().getHolder();
+        if (!(source instanceof DoubleChest)) {
+            return;
+        }
+        DoubleChest doubleChest = (DoubleChest) source;
+        Chest leftChest = (Chest) doubleChest.getLeftSide();
+        Chest rightChest = (Chest) doubleChest.getRightSide();
+
+        Block leftBlock = leftChest.getBlock();
+        Block rightBlock = rightChest.getBlock();
+
+        AutoCrafter autoCrafter = AutoCraft.getAutoCrafterFromInventorySpots(leftBlock, rightBlock);
+        if (autoCrafter != null) {
+            autoCrafter.run();
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onItemTakeFromContainer(InventoryClickEvent e) {
+        InventoryHolder source = e.getInventory().getHolder();
+        if (!(source instanceof Container)) {
+            return;
+        }
+        Container container = (Container) source;
+        Block block = container.getBlock();
+
+        AutoCrafter autoCrafter = AutoCraft.getAutoCrafter(block);
+        if (autoCrafter == null) {
+            return;
+        }
+
+        if (    e.getAction() == InventoryAction.COLLECT_TO_CURSOR ||
+                e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY ||
+                e.getAction() == InventoryAction.PICKUP_ALL ||
+                e.getAction() == InventoryAction.PICKUP_HALF ||
+                e.getAction() == InventoryAction.PICKUP_SOME ||
+                e.getAction() == InventoryAction.PICKUP_ONE){
+            autoCrafter.run();
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onItemTakeFromDoubleChest(InventoryClickEvent e) {
+        InventoryHolder source = e.getInventory().getHolder();
+        if (!(source instanceof DoubleChest)) {
+            return;
+        }
+        DoubleChest doubleChest = (DoubleChest) source;
+        Chest leftChest = (Chest) doubleChest.getLeftSide();
+        Chest rightChest = (Chest) doubleChest.getRightSide();
+
+        Block leftBlock = leftChest.getBlock();
+        Block rightBlock = rightChest.getBlock();
+
+        AutoCrafter autoCrafter = AutoCraft.getAutoCrafterFromInventorySpots(leftBlock, rightBlock);
+        if (autoCrafter == null) {
+            return;
+        }
+
+        if (    e.getAction() == InventoryAction.COLLECT_TO_CURSOR ||
+                e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY ||
+                e.getAction() == InventoryAction.PICKUP_ALL ||
+                e.getAction() == InventoryAction.PICKUP_HALF ||
+                e.getAction() == InventoryAction.PICKUP_SOME ||
+                e.getAction() == InventoryAction.PICKUP_ONE){
+
+            autoCrafter.run();
         }
     }
 

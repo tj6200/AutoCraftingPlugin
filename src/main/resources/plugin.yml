@@ -1,10 +1,24 @@
 main: com.tj6200.autocraft.AutoCraft
 name: AutoCraftingPlugin
 version: 1.2
-api-version: 1.17
+api-version: 1.18
 author: tj6200
+permissions:
+  ac.all:
+    description: All players.
+    default: true
 commands:
   reloadrecipes:
-    description: "Reloads recipes for the Autocrafters"
+    description: "Reloads recipes for the autocrafters."
     usage: /reloadrecipes
-    permission: op
+    permission: ac.all
+  listcrafters:
+    description: "Lists all of the autocrafters in all worlds. \nOptional parameter 'inChunk' restarts autocrafters in the current chunk."
+    usage: /listcrafters
+    permission: ac.all
+  restartcrafters:
+    description: "Restarts all autocrafters. \nOptional parameter 'inChunk' restarts autocrafters in the current chunk."
+    usage: /restartcrafters
+    permission: ac.all
+
+

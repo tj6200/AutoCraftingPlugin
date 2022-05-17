@@ -48,6 +48,7 @@ public class AutoCrafter {
 
     public AutoCrafter(Block block, Block itemFrame, ItemStack item){
         init(block, itemFrame, item);
+        this.run();
     }
 
     public AutoCrafter(JsonObject json) {
@@ -115,6 +116,7 @@ public class AutoCrafter {
             this.breakCrafter();
             return false;
         }
+        this.item = item;
         this.run();
         return true;
     }
@@ -152,9 +154,10 @@ public class AutoCrafter {
             if (item.getType().equals(Material.AIR) || item == null) {
                 continue;
             }
-            AutoCraft.LOGGER.log(this + " was loaded");
             this.isLoaded = true;
             this.setItem(item);
+            AutoCraft.LOGGER.log(this + " was loaded");
+            this.run();
             return;
         }
 
@@ -184,14 +187,17 @@ public class AutoCrafter {
             items.add(recipe.getResultDrop());
 
             if (!AutoCraft.addItemsIfCan(destInv.getInventory(), items)) {
+                // AutoCraft.LOGGER.log(this + " ? Destination inventory cannot hold items.");
                 continue;
             }
             solution.applyTo(inv);
 
-            if (AutoCraft.particles)
-                for (Location loc : AutoCraft.getHollowCube(block.getLocation(), 0.05))
+            if (AutoCraft.particles) {
+                for (Location loc : AutoCraft.getHollowCube(block.getLocation(), 0.05)) {
                     loc.getWorld().spawnParticle(Particle.REDSTONE, loc, 2, 0, 0, 0, 0,
                             new Particle.DustOptions(Color.LIME, 0.2F));
+                }
+            }
 
             return true;
         }
@@ -205,31 +211,47 @@ public class AutoCrafter {
 
     public boolean handle() {
         if (isBroken || !isLoaded) {
+            // AutoCraft.LOGGER.log(this + " ? Broken or not loaded.");
             return false;
         }
 
         if (!dispenserChunk.isLoaded()) {
+            // AutoCraft.LOGGER.log(this + " ? Chunk was not loaded.");
             return false;
         }
         updateStates();
+        if (isBroken) {
+            // AutoCraft.LOGGER.log(this + " ? Could not update states.");
+            return false;
+        }
         if (destination instanceof InventoryHolder) {
             return bukkitCraftItem();
         }
 
+        // AutoCraft.LOGGER.log(this + " ? Didn't find a suitable container to put items in.");
         return false;
     }
 
-    private void run() {
+    public boolean isRunning() {
+        return (task != null);
+    }
+
+    public void run() {
         if (task != null) {
             return;
         }
         task = new CraftingTask(this);
     }
 
-    private void stop() {
+    public void stop() {
         if (task != null) {
             task.cancel();
         }
+    }
+
+    public void restart() {
+        this.stop();
+        this.run();
     }
 
     public JsonObject toJSON() {
@@ -265,6 +287,24 @@ public class AutoCrafter {
         builder.append(block.getY());
         builder.append(", ");
         builder.append(block.getZ());
+        builder.append(";");
+        if (this.item == null) {
+            builder.append("null");
+        }else {
+            builder.append(this.item.getType().name());
+        }
+        builder.append(": Broken? ");
+        if (this.isBroken) {
+            builder.append("Yes");
+        }else {
+            builder.append("No");
+        }
+        builder.append(": Running? ");
+        if (this.isRunning()) {
+            builder.append("Yes");
+        }else {
+            builder.append("No");
+        }
         builder.append("]");
         return builder.toString();
     }

@@ -5,10 +5,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class CraftingTask extends BukkitRunnable {
     AutoCrafter autoCrafter;
+    boolean ranOnce;
 
     public CraftingTask(AutoCrafter autoCrafter) {
         this.autoCrafter = autoCrafter;
-        AutoCraft.LOGGER.log(autoCrafter + " started running.");
+        this.ranOnce = false;
         runTaskTimer(AutoCraft.INSTANCE, 2L, AutoCraft.craftCooldown);
     }
 
@@ -17,7 +18,9 @@ public class CraftingTask extends BukkitRunnable {
         try {
             super.cancel();
             autoCrafter.task = null;
-            AutoCraft.LOGGER.log(autoCrafter + " stopped.");
+            if (ranOnce) {
+                AutoCraft.LOGGER.log(autoCrafter + " stopped.");
+            }
         }catch (Exception e) {
             AutoCraft.LOGGER.log("Task cancellation unsuccessful.");
         }
@@ -31,6 +34,11 @@ public class CraftingTask extends BukkitRunnable {
                 return;
             }
         }
-        autoCrafter.handle();
+        if (autoCrafter.handle() == false) {
+            this.cancel();
+        }else if (!ranOnce) {
+            AutoCraft.LOGGER.log(autoCrafter + " started running.");
+            ranOnce = true;
+        }
     }
 }

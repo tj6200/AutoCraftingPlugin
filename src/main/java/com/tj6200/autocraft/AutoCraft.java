@@ -97,6 +97,46 @@ public class AutoCraft extends JavaPlugin {
             }
             return true;
         }
+        if (command.getName().equalsIgnoreCase("listcrafters")) {
+            if (sender instanceof  Player) {
+                Player player = (Player) sender;
+                Chunk chunk = null;
+                if (args.length > 0) {
+                    if (args[0].equalsIgnoreCase("inchunk")) {
+                        chunk = player.getChunk();
+                    }
+                }
+                for (AutoCrafter autoCrafter: autoCrafters) {
+                    if (chunk != null &&
+                            (chunk.getChunkKey() != autoCrafter.dispenserChunk.getChunkKey() ||
+                                    chunk.getWorld() != autoCrafter.dispenserChunk.getWorld())) {
+                        continue;
+                    }
+                    Utils.sendMessageToPlayer(player, autoCrafter.toString());
+                }
+            }
+            return true;
+        }
+        if (command.getName().equalsIgnoreCase("restartcrafters")) {
+            if (sender instanceof  Player) {
+                Player player = (Player) sender;
+                Chunk chunk = null;
+                if (args.length > 0) {
+                    if (args[0].equalsIgnoreCase("inchunk")) {
+                        chunk = player.getChunk();
+                    }
+                }
+                for (AutoCrafter autoCrafter: autoCrafters) {
+                    if (chunk != null &&
+                            (chunk.getChunkKey() != autoCrafter.dispenserChunk.getChunkKey() ||
+                                    chunk.getWorld() != autoCrafter.dispenserChunk.getWorld())) {
+                        continue;
+                    }
+                    autoCrafter.restart();
+                }
+            }
+            return true;
+        }
         return false;
     }
 
@@ -173,6 +213,34 @@ public class AutoCraft extends JavaPlugin {
         return null;
     }
 
+    public static AutoCrafter getAutoCrafterFromInventory(Block block) {
+        for(AutoCrafter autoCrafter: autoCrafters) {
+            if (autoCrafter.destinationBlock.equals(block)) {
+                return autoCrafter;
+            }
+        }
+        return null;
+    }
+    public static AutoCrafter getAutoCrafterFromInventorySpots(Block block1, Block block2) {
+        for(AutoCrafter autoCrafter: autoCrafters) {
+            if (autoCrafter.destinationBlock.equals(block1) || autoCrafter.destinationBlock.equals(block2)) {
+                return autoCrafter;
+            }
+        }
+        return null;
+    }
+
+    public static ArrayList<AutoCrafter> getAutoCraftersInChunk(Chunk chunk) {
+        ArrayList<AutoCrafter> list = new ArrayList<AutoCrafter>();
+        for (AutoCrafter autoCrafter: autoCrafters) {
+            if (autoCrafter.dispenserChunk.getChunkKey() == chunk.getChunkKey() &&
+                autoCrafter.dispenserChunk.getWorld() == chunk.getWorld()) {
+                list.add(autoCrafter);
+            }
+        }
+        return list;
+    }
+
     public static boolean isAutoCrafter(Block block) {
         for(AutoCrafter autoCrafter: autoCrafters) {
             if (autoCrafter.block.equals(block)) {
@@ -221,6 +289,7 @@ public class AutoCraft extends JavaPlugin {
                 if (player != null) {
                     Utils.sendActionBarMessageToPlayer(player, "AutoCrafter Destroyed");
                 }
+                autoCrafter.breakCrafter();
                 autoCrafters.remove(autoCrafter);
                 return;
             }

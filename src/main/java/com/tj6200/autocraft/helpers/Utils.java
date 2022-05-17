@@ -1,5 +1,6 @@
 package com.tj6200.autocraft.helpers;
 
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -68,12 +69,16 @@ public class Utils {
         return false;
     }
 
-    public static BaseComponent[] getText(final String text) {
-        return TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', text));
+    public static Component getText(final String text) {
+        return Component.text(ChatColor.translateAlternateColorCodes('&', text));
     }
 
     public static void sendActionBarMessageToPlayer(Player player, String message) {
-        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText(message));
+        player.sendActionBar(getText(message));
+    }
+
+    public static void sendMessageToPlayer(Player player, String message) {
+        player.sendMessage(getText(message));
     }
 
     /**
