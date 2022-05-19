@@ -37,15 +37,22 @@ An open-source plugin for Bukkit which adds autocrafters capable of automaticall
 <br/>
 
 **Features**
-- Autocrafters will put the items inside of containers adjacent to the face of the dropper. This saves performance for servers so players don't need to have hoppers to pick up the items.
-- Powering the dropper will stop the autocrafting process even if there are still items inside.
-- Optional configuration to show green particles when an autocrafter is crafting an item.
-- Ability to set how fast autocrafters will craft items.
-- Ability to set how long (in minutes) between saves of data.
-- Various redstone modes
-  - Disabled - redstone will not affect the autocrafters.
-  - Direct - autocrafters are disabled with direct power.
-  - Indirect - autocrafters can be disabled with indirect redstone power.
+- Autocrafters will put the items inside of containers adjacent to the face of the dropper. This saves performance for servers so players don't need to have hoppers to pick up the items. 
+- Powering the dropper will stop the autocrafting process even if there are still items inside. 
+- Optional configuration to show green particles when an autocrafter is crafting an item. 
+- Ability to set how fast autocrafters will craft items. 
+- Ability to set how long (in minutes) between saves of data. 
+- Various redstone modes 
+  * Disabled - redstone will not affect the autocrafters. 
+  * Direct - autocrafters are disabled with direct power. 
+  * Indirect - autocrafters can be disabled with indirect redstone power.
+- Commands
+  * /reloadrecipes - reloads the recipes saved for the AutoCrafters. Needed if you use a plugin that changes recipes during gameplay.
+  * /listcrafters [inChunk] - lists all AutoCrafters created or in the chunk that the player who calls the command is in.
+  * /restartcrafters [inChunk] - attempts to restart all AutoCrafters created or in the chunk that the player who calls the command is in.
+  * /debugcrafters [true/false] - toggles AutoCrafter debug output for the player that calls the command.
+
+
 
 [//]: # (**Adding this plugin as a dependency**)
 
