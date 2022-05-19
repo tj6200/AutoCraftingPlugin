@@ -19,16 +19,17 @@
 package com.tj6200.autocraft;
 
 import com.google.gson.*;
+import com.tj6200.autocraft.commands.DebugCraftersExecutor;
+import com.tj6200.autocraft.commands.ListCraftersExecutor;
+import com.tj6200.autocraft.commands.ReloadRecipesExecutor;
+import com.tj6200.autocraft.commands.RestartCraftersExecutor;
 import com.tj6200.autocraft.helpers.Utils;
 import com.tj6200.autocraft.listeners.EntitiesLoaderListener;
 import com.tj6200.autocraft.listeners.EventListener;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Container;
-import org.bukkit.block.DoubleChest;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
@@ -42,8 +43,6 @@ import java.nio.file.Path;
 import java.util.*;
 import com.tj6200.autocraft.api.*;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitScheduler;
-import org.jetbrains.annotations.NotNull;
 
 
 public class AutoCraft extends JavaPlugin {
@@ -59,6 +58,20 @@ public class AutoCraft extends JavaPlugin {
 
     public static LogHandler LOGGER;
     public static AutoCraft INSTANCE;
+
+    private void registerCommand(String name, CommandExecutor executor) {
+        PluginCommand command = getCommand(name);
+        if (command != null) {
+            command.setExecutor(executor);
+        }
+    }
+
+    private void registerCommands() {
+        registerCommand("reloadrecipes", new ReloadRecipesExecutor());
+        registerCommand("listcrafters", new ListCraftersExecutor());
+        registerCommand("restartcrafters", new RestartCraftersExecutor());
+        registerCommand("debugcrafters", new DebugCraftersExecutor());
+    }
 
     @Override
     public void onEnable() {
@@ -83,61 +96,9 @@ public class AutoCraft extends JavaPlugin {
             }
         }, saveCoolDown, saveCoolDown);
 
+        registerCommands();
         new EventListener(this);
         new EntitiesLoaderListener(this);
-    }
-
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (command.getName().equalsIgnoreCase("reloadrecipes")) {
-            RecipeHandler.collectRecipes();
-            if (sender instanceof Player) {
-                Player player = (Player) sender;
-                Utils.sendActionBarMessageToPlayer(player, "Reloaded Recipes");
-            }
-            return true;
-        }
-        if (command.getName().equalsIgnoreCase("listcrafters")) {
-            if (sender instanceof  Player) {
-                Player player = (Player) sender;
-                Chunk chunk = null;
-                if (args.length > 0) {
-                    if (args[0].equalsIgnoreCase("inchunk")) {
-                        chunk = player.getChunk();
-                    }
-                }
-                for (AutoCrafter autoCrafter: autoCrafters) {
-                    if (chunk != null &&
-                            (chunk.getChunkKey() != autoCrafter.dispenserChunk.getChunkKey() ||
-                                    chunk.getWorld() != autoCrafter.dispenserChunk.getWorld())) {
-                        continue;
-                    }
-                    Utils.sendMessageToPlayer(player, autoCrafter.toString());
-                }
-            }
-            return true;
-        }
-        if (command.getName().equalsIgnoreCase("restartcrafters")) {
-            if (sender instanceof  Player) {
-                Player player = (Player) sender;
-                Chunk chunk = null;
-                if (args.length > 0) {
-                    if (args[0].equalsIgnoreCase("inchunk")) {
-                        chunk = player.getChunk();
-                    }
-                }
-                for (AutoCrafter autoCrafter: autoCrafters) {
-                    if (chunk != null &&
-                            (chunk.getChunkKey() != autoCrafter.dispenserChunk.getChunkKey() ||
-                                    chunk.getWorld() != autoCrafter.dispenserChunk.getWorld())) {
-                        continue;
-                    }
-                    autoCrafter.restart();
-                }
-            }
-            return true;
-        }
-        return false;
     }
 
     private static void getAutoCraftersFromJSON(JsonObject json) {
@@ -231,7 +192,7 @@ public class AutoCraft extends JavaPlugin {
     }
 
     public static ArrayList<AutoCrafter> getAutoCraftersInChunk(Chunk chunk) {
-        ArrayList<AutoCrafter> list = new ArrayList<AutoCrafter>();
+        ArrayList<AutoCrafter> list = new ArrayList<>();
         for (AutoCrafter autoCrafter: autoCrafters) {
             if (autoCrafter.dispenserChunk.getChunkKey() == chunk.getChunkKey() &&
                 autoCrafter.dispenserChunk.getWorld() == chunk.getWorld()) {
@@ -365,7 +326,10 @@ public class AutoCraft extends JavaPlugin {
             YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(getResource("config.yml")));
             if (config.getInt("config-version") != defaultConfig.getInt("config-version")) {
                 LOGGER.log(ChatColor.RED + "Config version does not match, saving to 'config_old.yml' and going back to defaults");
-                configFile.renameTo(getFile("config_old.yml"));
+
+                if(!configFile.renameTo(getFile("config_old.yml"))) {
+                    LOGGER.log("Could not rename old file.");
+                }
             }
         }
         saveDefaultConfig();

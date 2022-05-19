@@ -1,9 +1,6 @@
 package com.tj6200.autocraft.helpers;
 
 import net.kyori.adventure.text.Component;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;

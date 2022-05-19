@@ -1,31 +1,14 @@
 package com.tj6200.autocraft;
 
-import com.destroystokyo.paper.Namespaced;
-import com.google.common.collect.Multimap;
 import com.tj6200.autocraft.api.CraftingRecipe;
 import com.tj6200.autocraft.api.RecipeType;
-import com.tj6200.autocraft.helpers.Utils;
 import com.tj6200.autocraft.helpers.recipes.BukkitRecipe;
 import com.tj6200.autocraft.helpers.recipes.FireworksRecipe;
 import com.tj6200.autocraft.helpers.recipes.SuspicousStewRecipe;
-import net.kyori.adventure.text.Component;
-import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
 import org.bukkit.inventory.*;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Collectors;

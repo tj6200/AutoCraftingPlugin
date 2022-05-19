@@ -54,7 +54,11 @@ public class AutoCrafter {
     public AutoCrafter(JsonObject json) {
         String worldKeyString = json.get(worldJsonPropStr).getAsString();
         World world = Bukkit.getWorld(worldKeyString);
-
+        if (world == null) {
+            AutoCraft.LOGGER.log("World does not exist.");
+            this.breakCrafter();
+            return;
+        }
         JsonObject position = json.getAsJsonObject(blockPosJsonPropStr);
 
         int x = position.get("x").getAsInt();
@@ -67,7 +71,7 @@ public class AutoCrafter {
         if (!(state instanceof Dispenser)) {
             AutoCraft.LOGGER.log("Block is not a dispenser.");
             this.breakCrafter();
-            throw new IllegalArgumentException();
+            return;
         }
         setBlock(block);
 
@@ -104,7 +108,7 @@ public class AutoCrafter {
         recipes = RecipeHandler.getRecipesFor(item);
     }
 
-    public boolean setItem(ItemStack item) {
+    public void setItem(ItemStack item) {
         isBroken = false;
         isLoaded = true;
         BlockState state = block.getState();
@@ -114,11 +118,10 @@ public class AutoCrafter {
         if (recipes.size() == 0) {
             this.item = null;
             this.breakCrafter();
-            return false;
+            return;
         }
         this.item = item;
         this.run();
-        return true;
     }
 
     public void breakCrafter() {
@@ -141,17 +144,16 @@ public class AutoCrafter {
         }
 
         for(Entity entity: entities) {
-            if (!(entity instanceof ItemFrame)) {
+            if (!(entity instanceof ItemFrame itemFrame)) {
                 continue;
             }
-            ItemFrame itemFrame = (ItemFrame) entity;
             Block itemFrameBlock = itemFrame.getLocation().getBlock();
             if (!itemFrameBlock.equals(this.itemFrame)) {
                 continue;
             }
 
             ItemStack item = itemFrame.getItem();
-            if (item.getType().equals(Material.AIR) || item == null) {
+            if (item.getType().equals(Material.AIR)) {
                 continue;
             }
             this.isLoaded = true;
@@ -187,7 +189,7 @@ public class AutoCrafter {
             items.add(recipe.getResultDrop());
 
             if (!AutoCraft.addItemsIfCan(destInv.getInventory(), items)) {
-                // AutoCraft.LOGGER.log(this + " ? Destination inventory cannot hold items.");
+                AutoCraft.LOGGER.debugLog(this + " ? Destination inventory cannot hold items.");
                 continue;
             }
             solution.applyTo(inv);
@@ -211,24 +213,24 @@ public class AutoCrafter {
 
     public boolean handle() {
         if (isBroken || !isLoaded) {
-            // AutoCraft.LOGGER.log(this + " ? Broken or not loaded.");
+            AutoCraft.LOGGER.debugLog(this + " ? Broken or not loaded.");
             return false;
         }
 
         if (!dispenserChunk.isLoaded()) {
-            // AutoCraft.LOGGER.log(this + " ? Chunk was not loaded.");
+            AutoCraft.LOGGER.debugLog(this + " ? Chunk was not loaded.");
             return false;
         }
         updateStates();
         if (isBroken) {
-            // AutoCraft.LOGGER.log(this + " ? Could not update states.");
+            AutoCraft.LOGGER.debugLog(this + " ? Could not update states.");
             return false;
         }
         if (destination instanceof InventoryHolder) {
             return bukkitCraftItem();
         }
 
-        // AutoCraft.LOGGER.log(this + " ? Didn't find a suitable container to put items in.");
+        AutoCraft.LOGGER.debugLog(this + " ? Didn't find a suitable container to put items in.");
         return false;
     }
 

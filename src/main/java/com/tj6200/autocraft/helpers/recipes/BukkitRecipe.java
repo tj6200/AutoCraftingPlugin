@@ -27,7 +27,7 @@ public class BukkitRecipe implements CraftingRecipe {
     private static final Class<?> craftMetaBlockState = ReflectionHelper.getCraftBukkitClass("inventory.CraftMetaBlockState").orElse(null);
     private static final Field blockEntityTag = ReflectionHelper.getField(craftMetaBlockState, "blockEntityTag").orElse(null);
     private final ItemStack result;
-    private NamespacedKey namespacedKey = null;
+    private NamespacedKey namespacedKey;
     private RecipeType type = RecipeType.UNKNOWN;
     private List<RecipeRequirement> requirements;
     //Shaped Recipes

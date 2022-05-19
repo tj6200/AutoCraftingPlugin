@@ -6,8 +6,6 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.entity.Player;
 
 /**
  * The ReflectionHelper is a utility to aid in using reflection to interact

@@ -36,6 +36,7 @@ import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -52,6 +53,11 @@ public class EventListener implements Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerLeave(PlayerQuitEvent e) {
+        Player player = e.getPlayer();
+        AutoCraft.LOGGER.removeDebugPlayer(player);
+    }
     @EventHandler(priority = EventPriority.MONITOR)
     public void onChunkLoad(ChunkLoadEvent e) {
         Chunk chunk = e.getChunk();
@@ -88,10 +94,9 @@ public class EventListener implements Listener {
     public void onCloseInventory(InventoryCloseEvent e) {
         InventoryHolder inventory = e.getInventory().getHolder();
 
-        if (!(inventory instanceof Container)) {
+        if (!(inventory instanceof Container container)) {
             return;
         }
-        Container container = (Container) inventory;
         Block block = container.getBlock();
         AutoCrafter autoCrafter = AutoCraft.getAutoCrafter(block);
         if (autoCrafter == null) {
@@ -104,10 +109,9 @@ public class EventListener implements Listener {
     public void onOpenInventory(InventoryOpenEvent e) {
         InventoryHolder inventory = e.getInventory().getHolder();
 
-        if (!(inventory instanceof Container)) {
+        if (!(inventory instanceof Container container)) {
             return;
         }
-        Container container = (Container) inventory;
         Block block = container.getBlock();
         AutoCrafter autoCrafter = AutoCraft.getAutoCrafter(block);
         if (autoCrafter == null) {
@@ -128,11 +132,10 @@ public class EventListener implements Listener {
     public void onDestroyItemFrame(final HangingBreakEvent e) {
         //Destroying the item frame breaks the autocrafter.
         Entity entity = e.getEntity();
-        if (!(entity instanceof ItemFrame)) {
+        if (!(entity instanceof ItemFrame itemFrame)) {
             return;
         }
 
-        ItemFrame itemFrame = (ItemFrame) entity;
         Block block = itemFrame.getLocation().getBlock().getRelative(itemFrame.getAttachedFace());
         AutoCraft.destroyAutoCrafter(block);
     }
@@ -141,18 +144,16 @@ public class EventListener implements Listener {
     public void onItemTakenFromItemFrame(final EntityDamageByEntityEvent e) {
         //Stealing the item from the item frame destroys the autocrafter.
         Entity entity = e.getEntity();
-        if (!(entity instanceof ItemFrame)) {
+        if (!(entity instanceof ItemFrame itemFrame)) {
             return;
         }
 
 
-        ItemFrame itemFrame = (ItemFrame) entity;
         Block itemFrameBlock = itemFrame.getLocation().getBlock();
         Block block = itemFrameBlock.getRelative(itemFrame.getAttachedFace());
 
         Entity damager = e.getDamager();
-        if (damager instanceof Player) {
-            Player player = (Player) damager;
+        if (damager instanceof Player player) {
             AutoCraft.breakAutoCrafter(block, player);
         }else {
             AutoCraft.breakAutoCrafter(block);
@@ -165,27 +166,24 @@ public class EventListener implements Listener {
     public void onItemMoveOutOfAutoCrafter(final InventoryMoveItemEvent e) {
         InventoryHolder initiator = e.getInitiator().getHolder();
         //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
-        if (!(initiator instanceof Container)) {
+        if (!(initiator instanceof Container container)) {
             return;
         }
-        Container container = (Container) initiator;
         Block block = container.getBlock();
 
         // if the source is the inventory
         AutoCrafter autoCrafter = AutoCraft.getAutoCrafter(block);
         if (autoCrafter != null) {
             e.setCancelled(true);
-            return;
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onItemMoveIntoAutoCrafter(final InventoryMoveItemEvent e) {
         InventoryHolder destination = e.getDestination().getHolder();
-        if (!(destination instanceof Dispenser)) {
+        if (!(destination instanceof Dispenser dispenser)) {
             return;
         }
-        Dispenser dispenser = (Dispenser) destination;
         Block block = dispenser.getBlock();
 
         AutoCrafter autoCrafter = AutoCraft.getAutoCrafter(block);
@@ -197,10 +195,9 @@ public class EventListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onItemMoveFromContainer(final InventoryMoveItemEvent e){
         InventoryHolder source = e.getSource().getHolder();
-        if (!(source instanceof Container)) {
+        if (!(source instanceof Container container)) {
             return;
         }
-        Container container = (Container) source;
         Block block = container.getBlock();
 
         AutoCrafter autoCrafter = AutoCraft.getAutoCrafterFromInventory(block);
@@ -212,12 +209,13 @@ public class EventListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onItemMoveFromDoubleChest(final InventoryMoveItemEvent e){
         InventoryHolder source = e.getSource().getHolder();
-        if (!(source instanceof DoubleChest)) {
+        if (!(source instanceof DoubleChest doubleChest)) {
             return;
         }
-        DoubleChest doubleChest = (DoubleChest) source;
         Chest leftChest = (Chest) doubleChest.getLeftSide();
         Chest rightChest = (Chest) doubleChest.getRightSide();
+
+        if (leftChest == null || rightChest == null) return;
 
         Block leftBlock = leftChest.getBlock();
         Block rightBlock = rightChest.getBlock();
@@ -231,10 +229,9 @@ public class EventListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onItemTakeFromContainer(InventoryClickEvent e) {
         InventoryHolder source = e.getInventory().getHolder();
-        if (!(source instanceof Container)) {
+        if (!(source instanceof Container container)) {
             return;
         }
-        Container container = (Container) source;
         Block block = container.getBlock();
 
         AutoCrafter autoCrafter = AutoCraft.getAutoCrafter(block);
@@ -255,12 +252,13 @@ public class EventListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onItemTakeFromDoubleChest(InventoryClickEvent e) {
         InventoryHolder source = e.getInventory().getHolder();
-        if (!(source instanceof DoubleChest)) {
+        if (!(source instanceof DoubleChest doubleChest)) {
             return;
         }
-        DoubleChest doubleChest = (DoubleChest) source;
         Chest leftChest = (Chest) doubleChest.getLeftSide();
         Chest rightChest = (Chest) doubleChest.getRightSide();
+
+        if (leftChest == null || rightChest == null) return;
 
         Block leftBlock = leftChest.getBlock();
         Block rightBlock = rightChest.getBlock();
@@ -269,7 +267,7 @@ public class EventListener implements Listener {
         if (autoCrafter == null) {
             return;
         }
-
+        AutoCraft.LOGGER.debugLog(e.getAction().name());
         if (    e.getAction() == InventoryAction.COLLECT_TO_CURSOR ||
                 e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY ||
                 e.getAction() == InventoryAction.PICKUP_ALL ||
@@ -297,7 +295,6 @@ public class EventListener implements Listener {
         if (!(hanging instanceof ItemFrame)) {
             return;
         }
-        ItemFrame itemFrame = (ItemFrame) hanging;
         Block block = e.getBlock();
         if (AutoCraft.isAutoCrafter(block)) {
             e.setCancelled(true);
@@ -321,7 +318,7 @@ public class EventListener implements Listener {
         }else {
             heldItem = player.getInventory().getItemInOffHand();
         }
-        if (heldItem == null || heldItem.getType() == Material.AIR) {
+        if (Material.AIR == heldItem.getType()) {
             return;
         }
 
@@ -337,7 +334,6 @@ public class EventListener implements Listener {
 
             new BukkitRunnable() {
                 public void run() {
-                    ItemStack item = ((ItemFrame) e.getRightClicked()).getItem();
                     AutoCraft.updateAutoCrafter(block, itemFrame, player);
 
                 }

@@ -1,6 +1,6 @@
 main: com.tj6200.autocraft.AutoCraft
 name: AutoCraftingPlugin
-version: 1.2
+version: 1.3
 api-version: 1.18
 author: tj6200
 permissions:
@@ -14,11 +14,16 @@ commands:
     permission: ac.all
   listcrafters:
     description: "Lists all of the autocrafters in all worlds. \nOptional parameter 'inChunk' restarts autocrafters in the current chunk."
-    usage: /listcrafters
+    usage: /listcrafters [inChunk]
     permission: ac.all
   restartcrafters:
     description: "Restarts all autocrafters. \nOptional parameter 'inChunk' restarts autocrafters in the current chunk."
-    usage: /restartcrafters
+    usage: /restartcrafters [inChunk]
     permission: ac.all
+  debugcrafters:
+    description: "Sends debug information to true/false for the player that calls the command."
+    usage: /debugcrafters [true/false]
+    permission: ac.all
+
 
 
