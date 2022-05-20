@@ -19,10 +19,10 @@ public class CraftingTask extends BukkitRunnable {
             super.cancel();
             autoCrafter.task = null;
             if (ranOnce) {
-                AutoCraft.LOGGER.debugLog(autoCrafter + " stopped.");
+                AutoCraft.LOGGER.debugLog(autoCrafter + " stopped.", this.autoCrafter.debugPlayers);
             }
         }catch (Exception e) {
-            AutoCraft.LOGGER.debugLog("Task cancellation unsuccessful.");
+            AutoCraft.LOGGER.debugLog("Task cancellation unsuccessful.", this.autoCrafter.debugPlayers);
         }
     }
 
@@ -37,7 +37,7 @@ public class CraftingTask extends BukkitRunnable {
         if (!autoCrafter.handle()) {
             this.cancel();
         }else if (!ranOnce) {
-            AutoCraft.LOGGER.debugLog(autoCrafter + " started running.");
+            AutoCraft.LOGGER.debugLog(autoCrafter + " started running.", this.autoCrafter.debugPlayers);
             ranOnce = true;
         }
     }

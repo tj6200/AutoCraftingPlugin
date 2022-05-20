@@ -17,21 +17,20 @@ import java.util.List;
 public class RestartCraftersExecutor implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (sender instanceof Player player) {
-            Chunk chunk = null;
-            if (args.length > 0) {
-                if (args[0].equalsIgnoreCase("inChunk")) {
-                    chunk = player.getChunk();
-                }
+        if (!(sender instanceof Player player)) {
+            return false;
+        }
+        Chunk chunk = null;
+        if (args.length > 0 && args[0].equalsIgnoreCase("inChunk")) {
+            chunk = player.getChunk();
+        }
+        for (AutoCrafter autoCrafter: AutoCraft.autoCrafters) {
+            if (chunk != null &&
+                    (chunk.getChunkKey() != autoCrafter.getChunkKey() ||
+                            chunk.getWorld() != autoCrafter.getWorld())) {
+                continue;
             }
-            for (AutoCrafter autoCrafter: AutoCraft.autoCrafters) {
-                if (chunk != null &&
-                        (chunk.getChunkKey() != autoCrafter.dispenserChunk.getChunkKey() ||
-                                chunk.getWorld() != autoCrafter.dispenserChunk.getWorld())) {
-                    continue;
-                }
-                autoCrafter.restart();
-            }
+            autoCrafter.restart();
         }
         return true;
     }

@@ -2,8 +2,6 @@ package com.tj6200.autocraft.commands;
 
 import com.tj6200.autocraft.AutoCraft;
 import com.tj6200.autocraft.api.AutoCrafter;
-import com.tj6200.autocraft.helpers.Utils;
-import org.bukkit.Chunk;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -15,25 +13,22 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListCraftersExecutor implements CommandExecutor, TabCompleter {
-
+public class LoadCraftersExecutor implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!(sender instanceof Player player)) {
             return false;
         }
-
-        Chunk chunk = null;
-        if (args.length > 0 && args[0].equalsIgnoreCase("inChunk")) {
-            chunk = player.getChunk();
-        }
-        for (AutoCrafter autoCrafter: AutoCraft.autoCrafters) {
-            if (chunk != null &&
-                    (chunk.getChunkKey() != autoCrafter.getChunkKey() ||
-                            chunk.getWorld() != autoCrafter.getWorld())) {
-                continue;
+        for(AutoCrafter autoCrafter: AutoCraft.autoCrafters) {
+            if (args.length > 0) {
+                if (args[0].equalsIgnoreCase("inChunk")) {
+                    if (autoCrafter.getChunkKey() != player.getChunk().getChunkKey() ||
+                            autoCrafter.getWorld() != player.getWorld()) {
+                        continue;
+                    }
+                }
             }
-            Utils.sendMessageToPlayer(player, autoCrafter.toString());
+            autoCrafter.tryToLoad();
         }
         return true;
     }

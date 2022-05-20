@@ -56,7 +56,9 @@ public class EventListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerLeave(PlayerQuitEvent e) {
         Player player = e.getPlayer();
-        AutoCraft.LOGGER.removeDebugPlayer(player);
+        for(AutoCrafter autoCrafter: AutoCraft.autoCrafters) {
+            autoCrafter.removeDebugPlayer(player);
+        }
     }
     @EventHandler(priority = EventPriority.MONITOR)
     public void onChunkLoad(ChunkLoadEvent e) {
@@ -234,7 +236,7 @@ public class EventListener implements Listener {
         }
         Block block = container.getBlock();
 
-        AutoCrafter autoCrafter = AutoCraft.getAutoCrafter(block);
+        AutoCrafter autoCrafter = AutoCraft.getAutoCrafterFromInventory(block);
         if (autoCrafter == null) {
             return;
         }
@@ -267,7 +269,7 @@ public class EventListener implements Listener {
         if (autoCrafter == null) {
             return;
         }
-        AutoCraft.LOGGER.debugLog(e.getAction().name());
+
         if (    e.getAction() == InventoryAction.COLLECT_TO_CURSOR ||
                 e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY ||
                 e.getAction() == InventoryAction.PICKUP_ALL ||

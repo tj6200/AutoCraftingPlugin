@@ -1,6 +1,7 @@
 package com.tj6200.autocraft.commands;
 
 import com.tj6200.autocraft.AutoCraft;
+import com.tj6200.autocraft.api.AutoCrafter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -16,16 +17,48 @@ public class DebugCraftersExecutor implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (sender instanceof Player player) {
-            if (args.length > 0) {
-                if (args[0].equalsIgnoreCase("true")) {
-                    AutoCraft.LOGGER.addDebugPlayer(player);
-                    return true;
-                }else if (args[0].equalsIgnoreCase("false")) {
-                    AutoCraft.LOGGER.removeDebugPlayer(player);
-                    return true;
+        if (!(sender instanceof Player player)) {
+            return false;
+        }
+        if (args.length == 0) {
+            return false;
+        }
+        if (args[args.length - 1].equalsIgnoreCase("true")) {
+            for(AutoCrafter autoCrafter: AutoCraft.autoCrafters) {
+                if (args.length > 1) {
+                    if (args[0].equalsIgnoreCase("inWorld")) {
+                        if (autoCrafter.getWorld() != player.getWorld()) {
+                            continue;
+                        }
+                    }
+                    if (args[0].equalsIgnoreCase("inChunk")) {
+                        if (autoCrafter.getChunkKey() != player.getChunk().getChunkKey() ||
+                            autoCrafter.getWorld() != player.getWorld()) {
+                            continue;
+                        }
+                    }
                 }
+                autoCrafter.addDebugPlayer(player);
             }
+            return true;
+        }else if (args[args.length - 1].equalsIgnoreCase("false")) {
+            for(AutoCrafter autoCrafter: AutoCraft.autoCrafters) {
+                if (args.length > 1) {
+                    if (args[0].equalsIgnoreCase("inWorld")) {
+                        if (autoCrafter.getWorld() != player.getWorld()) {
+                            continue;
+                        }
+                    }
+                    if (args[0].equalsIgnoreCase("inChunk")) {
+                        if (autoCrafter.getChunkKey() != player.getChunk().getChunkKey() ||
+                                autoCrafter.getWorld() != player.getWorld()) {
+                            continue;
+                        }
+                    }
+                }
+                autoCrafter.removeDebugPlayer(player);
+            }
+            return true;
         }
         return false;
     }
@@ -34,6 +67,10 @@ public class DebugCraftersExecutor implements CommandExecutor, TabCompleter {
         List<String> list = new ArrayList<>();
         list.add("true");
         list.add("false");
+        if (args.length == 0) {
+            list.add("inChunk");
+            list.add("inWorld");
+        }
         return list;
     }
 }

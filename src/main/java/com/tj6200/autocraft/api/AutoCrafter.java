@@ -9,9 +9,11 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Dispenser;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.tj6200.autocraft.*;
@@ -24,10 +26,11 @@ public class AutoCrafter {
 
     public Block block;
     public Block itemFrame;
-    public Chunk dispenserChunk;
+    private Chunk dispenserChunk;
     public Chunk itemFrameChunk;
     public ItemStack item;
     public List<CraftingRecipe> recipes = new ArrayList<>();
+    public List<Player> debugPlayers = new ArrayList<>();
 
     private boolean isLoaded = false;
     private boolean isBroken = false;
@@ -38,16 +41,16 @@ public class AutoCrafter {
     public CraftingTask task;
 
     private void init(Block block, Block itemFrame, ItemStack item) {
-        setBlock(block);
-        setItemFrameBlock(itemFrame);
-        isBroken = false;
-        isLoaded = true;
-        updateStates();
-        setItem(item);
+        this.setBlock(block);
+        this.setItemFrameBlock(itemFrame);
+        this.isBroken = false;
+        this.isLoaded = true;
+        this.updateStates();
+        this.setItem(item);
     }
 
     public AutoCrafter(Block block, Block itemFrame, ItemStack item){
-        init(block, itemFrame, item);
+        this.init(block, itemFrame, item);
         this.run();
     }
 
@@ -73,7 +76,7 @@ public class AutoCrafter {
             this.breakCrafter();
             return;
         }
-        setBlock(block);
+        this.setBlock(block);
 
         position = json.getAsJsonObject(itemFramePosJsonPropStr);
         x = position.get("x").getAsInt();
@@ -82,7 +85,10 @@ public class AutoCrafter {
 
         blockLocation = new Location(world, x, y, z);
         block = world.getBlockAt(blockLocation);
-        setItemFrameBlock(block);
+        this.setItemFrameBlock(block);
+
+        this.itemFrameChunk.addPluginChunkTicket(AutoCraft.INSTANCE);
+        this.tryToLoad();
     }
 
     public void setBlock(Block block) {
@@ -105,17 +111,17 @@ public class AutoCrafter {
     }
 
     private void getRecipesFor(ItemStack item) {
-        recipes = RecipeHandler.getRecipesFor(item);
+        this.recipes = RecipeHandler.getRecipesFor(item);
     }
 
     public void setItem(ItemStack item) {
-        isBroken = false;
-        isLoaded = true;
+        this.isBroken = false;
+        this.isLoaded = true;
         BlockState state = block.getState();
         ((Nameable) state).customName(Component.text("Autocrafter"));
         state.update();
-        getRecipesFor(item);
-        if (recipes.size() == 0) {
+        this.getRecipesFor(item);
+        if (this.recipes.size() == 0) {
             this.item = null;
             this.breakCrafter();
             return;
@@ -124,9 +130,26 @@ public class AutoCrafter {
         this.run();
     }
 
+    public long getChunkKey() {
+        return this.dispenserChunk.getChunkKey();
+    }
+
+    public World getWorld() {
+        return this.dispenserChunk.getWorld();
+    }
+    public void addDebugPlayer(Player player) {
+        if (!this.debugPlayers.contains(player)) {
+            this.debugPlayers.add(player);
+        }
+    }
+
+    public void removeDebugPlayer(Player player) {
+        this.debugPlayers.remove(player);
+    }
+
     public void breakCrafter() {
-        isBroken = true;
-        item = null;
+        this.isBroken = true;
+        this.item = null;
         this.stop();
         BlockState state = block.getState();
         ((Nameable) state).customName(null);
@@ -134,15 +157,14 @@ public class AutoCrafter {
     }
 
     public boolean isBroken() {
-        return isBroken;
+        return this.isBroken;
     }
-    public boolean isLoaded() { return isLoaded; }
+    public boolean isLoaded() { return this.isLoaded; }
 
     public void load(List<Entity> entities) {
-        if (isLoaded) {
+        if (this.isLoaded) {
             return;
         }
-
         for(Entity entity: entities) {
             if (!(entity instanceof ItemFrame itemFrame)) {
                 continue;
@@ -156,27 +178,40 @@ public class AutoCrafter {
             if (item.getType().equals(Material.AIR)) {
                 continue;
             }
-            this.isLoaded = true;
             this.setItem(item);
-            AutoCraft.LOGGER.log(this + " was loaded");
+            this.itemFrameChunk.removePluginChunkTicket(AutoCraft.INSTANCE);
+            AutoCraft.LOGGER.log(this + " was loaded.");
+            AutoCraft.LOGGER.debugLog(this + " was loaded.", this.debugPlayers);
             this.run();
             return;
         }
+        AutoCraft.LOGGER.log(this + " failed to load.");
+        AutoCraft.LOGGER.debugLog(this + " failed to load.", this.debugPlayers);
+    }
 
-        this.breakCrafter();
+    public void unload() {
+        this.item = null;
+        this.recipes.clear();
+        this.isLoaded = false;
+        this.isBroken = false;
+    }
+
+    public void tryToLoad() {
+        List<Entity> entities = Arrays.asList(this.itemFrameChunk.getEntities());
+        this.load(entities);
     }
 
     private void updateStates() {
-        if (!block.getType().equals(Material.DISPENSER)) {
+        if (!this.block.getType().equals(Material.DISPENSER)) {
             this.breakCrafter();
             return;
         }
-        dispenser = (Dispenser) this.block.getState();
-        destination = destinationBlock.getState();
+        this.dispenser = (Dispenser) this.block.getState();
+        this.destination = this.destinationBlock.getState();
     }
 
     private boolean bukkitCraftItem() {
-        Inventory inv = dispenser.getInventory();
+        Inventory inv = this.dispenser.getInventory();
         InventoryHolder destInv = (InventoryHolder) destination;
 
         for (CraftingRecipe recipe: recipes) {
@@ -189,7 +224,7 @@ public class AutoCrafter {
             items.add(recipe.getResultDrop());
 
             if (!AutoCraft.addItemsIfCan(destInv.getInventory(), items)) {
-                AutoCraft.LOGGER.debugLog(this + " ? Destination inventory cannot hold items.");
+                AutoCraft.LOGGER.debugLog(this + " ? Destination inventory cannot hold items.", this.debugPlayers);
                 continue;
             }
             solution.applyTo(inv);
@@ -212,25 +247,33 @@ public class AutoCrafter {
      **/
 
     public boolean handle() {
-        if (isBroken || !isLoaded) {
-            AutoCraft.LOGGER.debugLog(this + " ? Broken or not loaded.");
+        if (this.isBroken) {
+            AutoCraft.LOGGER.debugLog(this + " ? Broken.", this.debugPlayers);
             return false;
         }
 
-        if (!dispenserChunk.isLoaded()) {
-            AutoCraft.LOGGER.debugLog(this + " ? Chunk was not loaded.");
+        if (!this.isLoaded) {
+            this.tryToLoad();
+            if (!this.isLoaded) {
+                AutoCraft.LOGGER.debugLog(this + " ? Failed to load.", this.debugPlayers);
+                return false;
+            }
+        }
+
+        if (!this.dispenserChunk.isLoaded()) {
+            AutoCraft.LOGGER.debugLog(this + " ? Chunk was not loaded.", this.debugPlayers);
             return false;
         }
         updateStates();
         if (isBroken) {
-            AutoCraft.LOGGER.debugLog(this + " ? Could not update states.");
+            AutoCraft.LOGGER.debugLog(this + " ? Could not update states.", this.debugPlayers);
             return false;
         }
         if (destination instanceof InventoryHolder) {
             return bukkitCraftItem();
         }
 
-        AutoCraft.LOGGER.debugLog(this + " ? Didn't find a suitable container to put items in.");
+        AutoCraft.LOGGER.debugLog(this + " ? Didn't find a suitable container to put items in.", this.debugPlayers);
         return false;
     }
 
@@ -295,17 +338,23 @@ public class AutoCrafter {
         }else {
             builder.append(this.item.getType().name());
         }
-        builder.append(": Broken? ");
+        builder.append(": B?");
         if (this.isBroken) {
-            builder.append("Yes");
+            builder.append("Y");
         }else {
-            builder.append("No");
+            builder.append("N");
         }
-        builder.append(": Running? ");
-        if (this.isRunning()) {
-            builder.append("Yes");
+        builder.append(": L?");
+        if (this.isLoaded()) {
+            builder.append("Y");
         }else {
-            builder.append("No");
+            builder.append("N");
+        }
+        builder.append(": R?");
+        if (this.isRunning()) {
+            builder.append("Y");
+        }else {
+            builder.append("N");
         }
         builder.append("]");
         return builder.toString();

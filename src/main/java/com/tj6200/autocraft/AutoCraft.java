@@ -19,10 +19,7 @@
 package com.tj6200.autocraft;
 
 import com.google.gson.*;
-import com.tj6200.autocraft.commands.DebugCraftersExecutor;
-import com.tj6200.autocraft.commands.ListCraftersExecutor;
-import com.tj6200.autocraft.commands.ReloadRecipesExecutor;
-import com.tj6200.autocraft.commands.RestartCraftersExecutor;
+import com.tj6200.autocraft.commands.*;
 import com.tj6200.autocraft.helpers.Utils;
 import com.tj6200.autocraft.listeners.EntitiesLoaderListener;
 import com.tj6200.autocraft.listeners.EventListener;
@@ -71,6 +68,8 @@ public class AutoCraft extends JavaPlugin {
         registerCommand("listcrafters", new ListCraftersExecutor());
         registerCommand("restartcrafters", new RestartCraftersExecutor());
         registerCommand("debugcrafters", new DebugCraftersExecutor());
+        registerCommand("loadcrafters", new LoadCraftersExecutor());
+        registerCommand("unloadcrafters", new UnloadCraftersExecutor());
     }
 
     @Override
@@ -194,8 +193,8 @@ public class AutoCraft extends JavaPlugin {
     public static ArrayList<AutoCrafter> getAutoCraftersInChunk(Chunk chunk) {
         ArrayList<AutoCrafter> list = new ArrayList<>();
         for (AutoCrafter autoCrafter: autoCrafters) {
-            if (autoCrafter.dispenserChunk.getChunkKey() == chunk.getChunkKey() &&
-                autoCrafter.dispenserChunk.getWorld() == chunk.getWorld()) {
+            if (autoCrafter.getChunkKey() == chunk.getChunkKey() &&
+                autoCrafter.getWorld() == chunk.getWorld()) {
                 list.add(autoCrafter);
             }
         }
@@ -271,7 +270,8 @@ public class AutoCraft extends JavaPlugin {
 
     public static void load(Chunk chunk, List<Entity> entities) {
         for(AutoCrafter autoCrafter: autoCrafters) {
-            if (chunk.getChunkKey() == autoCrafter.itemFrameChunk.getChunkKey()) {
+            if (chunk.getChunkKey() == autoCrafter.itemFrameChunk.getChunkKey() &&
+                chunk.getWorld() == autoCrafter.itemFrameChunk.getWorld()) {
                 autoCrafter.load(entities);
             }
         }
