@@ -185,8 +185,6 @@ public class AutoCrafter {
             this.run();
             return;
         }
-        AutoCraft.LOGGER.log(this + " failed to load.");
-        AutoCraft.LOGGER.debugLog(this + " failed to load.", this.debugPlayers);
     }
 
     public void unload() {
