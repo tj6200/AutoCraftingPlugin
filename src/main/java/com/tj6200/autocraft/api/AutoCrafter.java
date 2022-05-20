@@ -190,10 +190,14 @@ public class AutoCrafter {
     }
 
     public void unload() {
+        if (!this.isLoaded) {
+            return;
+        }
         this.item = null;
         this.recipes.clear();
         this.isLoaded = false;
         this.isBroken = false;
+        this.itemFrameChunk.addPluginChunkTicket(AutoCraft.INSTANCE);
     }
 
     public void tryToLoad() {

@@ -50,7 +50,8 @@ An open-source plugin for Bukkit which adds autocrafters capable of automaticall
   * /reloadrecipes - reloads the recipes saved for the AutoCrafters. Needed if you use a plugin that changes recipes during gameplay.
   * /listcrafters [inChunk] - lists all AutoCrafters created or in the chunk that the player who calls the command is in.
   * /restartcrafters [inChunk] - attempts to restart all AutoCrafters created or in the chunk that the player who calls the command is in.
-  * /debugcrafters [true/false] - toggles AutoCrafter debug output for the player that calls the command.
+  * /debugcrafters [inChunk/inWorld] [true/false] - toggles AutoCrafter debug output for the player that calls the command.
+  * /loadcrafters [inChunk] - attempts to load crafters
 
 
 
