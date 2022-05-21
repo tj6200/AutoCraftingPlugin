@@ -67,7 +67,7 @@ public class DebugCraftersExecutor implements CommandExecutor, TabCompleter {
         List<String> list = new ArrayList<>();
         list.add("true");
         list.add("false");
-        if (args.length == 0) {
+        if (args.length <= 1) {
             list.add("inChunk");
             list.add("inWorld");
         }
