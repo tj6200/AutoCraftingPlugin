@@ -55,6 +55,7 @@ public class AutoCraft extends JavaPlugin {
 
     public static LogHandler LOGGER;
     public static AutoCraft INSTANCE;
+    public static boolean isInitiated = false;
 
     private void registerCommand(String name, CommandExecutor executor) {
         PluginCommand command = getCommand(name);
@@ -75,17 +76,21 @@ public class AutoCraft extends JavaPlugin {
     @Override
     public void onEnable() {
         super.onEnable();
-        INSTANCE = this;
+        AutoCraft.INSTANCE = this;
 
-        LOGGER = new LogHandler(this);
-        LOGGER.log("AutoCraft plugin started");
+        AutoCraft.LOGGER = new LogHandler(this);
+        AutoCraft.LOGGER.log("AutoCraft plugin started");
 
         checkConfigFile();
         updateConfig();
 
         Bukkit.getScheduler().runTask(this, ()-> {
             RecipeHandler.collectRecipes();
+            AutoCraft.LOGGER.log("Enabling Event Listeners.");
+            new EventListener(this);
+            new EntitiesLoaderListener(this);
             getAutoCrafters();
+            AutoCraft.isInitiated = true;
         });
 
         Bukkit.getScheduler().scheduleSyncRepeatingTask(this, (Runnable) new BukkitRunnable() {
@@ -96,8 +101,6 @@ public class AutoCraft extends JavaPlugin {
         }, saveCoolDown, saveCoolDown);
 
         registerCommands();
-        new EventListener(this);
-        new EntitiesLoaderListener(this);
     }
 
     private static void getAutoCraftersFromJSON(JsonObject json) {

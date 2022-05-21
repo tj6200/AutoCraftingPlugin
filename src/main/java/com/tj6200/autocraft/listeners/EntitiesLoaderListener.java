@@ -20,7 +20,7 @@ public class EntitiesLoaderListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityLoad(EntitiesLoadEvent e) {
-        if (AutoCraft.areAllAutoCraftersLoaded()) {
+        if (AutoCraft.areAllAutoCraftersLoaded() && AutoCraft.isInitiated) {
             AutoCraft.LOGGER.log("All AutoCrafters are loaded!");
             unregister();
             return;
